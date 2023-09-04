@@ -29,149 +29,247 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
-type FadeInViewProps = PropsWithChildren<{
-  style: ViewStyle;
-  duration?: number; // New duration prop
-}>;
-
-const FadeInView: React.FC<FadeInViewProps> = props => {
-  const {style, duration = 1000, children} = props;
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: duration, // Use the custom duration
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim, duration]);
-
-  return (
-    <Animated.View style={{...style, opacity: fadeAnim}}>
-      {children}
-    </Animated.View>
-  );
-};
-
 function App(): JSX.Element {
-  const [isVisible, setVisible] = useState(false);
+  // if isInit, the button was initially pressed. if the button is pressed again, should be reversed.
+  const [isInit, setIsInit] = useState(false);
+  const [colors, setColors] = useState<string[]>([]);
+  const [middleButtonColor, setMiddleButtonColor] = useState<string>(
+    randomColor(),
+  );
 
-  const handleMiddlePress = () => {
-    setVisible(!isVisible);
+  // a new array of colors will be assigned with this function
+  const generateColors = (): void => {
+    //19 boxes in total
+    const newColors: string[] = Array.from({length: 19}, () => randomColor());
+
+    setColors(newColors);
+  };
+
+  //total animations are 9.
+  const fadeAnims = useRef(
+    Array.from({length: 9}, () => new Animated.Value(0)),
+  ).current;
+
+  // fade in starts from the start of the index. once all elements are present, the fade out should start at the very end of the index.
+  const handleAnimation = () => {
+    if (!isInit) {
+      setIsInit(true);
+      generateColors();
+
+      //fade in
+      const animations = fadeAnims.map((anim, index) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 1000,
+          delay: index * 1000,
+          useNativeDriver: true,
+        }),
+      );
+      Animated.parallel(animations).start();
+    } else {
+      setIsInit(false);
+
+      //fade out
+      const reverseAnimations = fadeAnims.map((anim, index) =>
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 1000,
+          delay: (fadeAnims.length - index - 1) * 1000,
+          useNativeDriver: true,
+        }),
+      );
+      Animated.parallel(reverseAnimations).start();
+    }
   };
 
   return (
-    <SafeAreaView style={styles.styleBg}>
-      {!isVisible ? (
-        <TouchableOpacity
-          onPress={handleMiddlePress}
-          style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-          <View style={styles.styleMiddle} />
-        </TouchableOpacity>
-      ) : (
-        <View>
-          {/* first row */}
-          <FadeInView style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 250, height: 100}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 150, height: 100}}
-            />
-          </FadeInView>
-
-          {/* second row */}
-          <FadeInView duration={2000} style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 150, height: 100}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 250, height: 100}}
-            />
-          </FadeInView>
-
-          {/* third row */}
-          <FadeInView duration={3000} style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-          </FadeInView>
-
-          {/* middle row */}
-          <View style={styles.container}>
-            <FadeInView
-              duration={4000}
-              style={{
-                backgroundColor: randomColor(),
-                width: 120,
-                height: 65,
-                marginBottom: 35,
-              }}
-            />
-            {/* middle button*/}
-            <TouchableOpacity onPress={handleMiddlePress}>
-              <View
-                style={[styles.styleMiddle, {backgroundColor: randomColor()}]}
-              />
-            </TouchableOpacity>
-            <FadeInView
-              duration={4000}
-              style={{
-                backgroundColor: randomColor(),
-                width: 120,
-                height: 65,
-                marginTop: 35,
-              }}
-            />
-          </View>
-
-          {/* first row after middle */}
-          <FadeInView duration={5000} style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 90, height: 120}}
-            />
-          </FadeInView>
-
-          {/* second row after middle */}
-          <FadeInView duration={6000} style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 250, height: 130}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 150, height: 130}}
-            />
-          </FadeInView>
-
-          {/* third row after middle */}
-          <FadeInView duration={7000} style={styles.container}>
-            <View
-              style={{backgroundColor: randomColor(), width: 150, height: 100}}
-            />
-            <View
-              style={{backgroundColor: randomColor(), width: 250, height: 100}}
-            />
-          </FadeInView>
+    <SafeAreaView style={styles.parentContainer}>
+      <View>
+        {/* first row */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[7],
+              backgroundColor: colors[0],
+              flex: 2,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[8],
+              backgroundColor: colors[1],
+              flex: 2,
+              height: 120,
+            }}
+          />
         </View>
-      )}
+
+        {/* second row */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[6],
+              backgroundColor: colors[2],
+              flex: 1,
+              height: 100,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[5],
+              backgroundColor: colors[3],
+              flex: 2,
+              height: 100,
+            }}
+          />
+        </View>
+
+        {/* third row */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[1],
+              backgroundColor: colors[4],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[2],
+              backgroundColor: colors[5],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[3],
+              backgroundColor: colors[6],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[4],
+              backgroundColor: colors[7],
+              flex: 1,
+              height: 120,
+            }}
+          />
+        </View>
+
+        {/* fading in should start here */}
+        {/* middle row */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[0],
+              backgroundColor: colors[8],
+              flex: 1,
+              height: 65,
+              marginBottom: 35,
+            }}
+          />
+          {/* middle button*/}
+          <TouchableOpacity
+            style={{
+              backgroundColor: middleButtonColor,
+              flex: 1,
+              height: 100,
+            }}
+            onPress={handleAnimation}>
+            <View />
+          </TouchableOpacity>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[0],
+              backgroundColor: colors[10],
+              flex: 1,
+              height: 65,
+              marginTop: 35,
+            }}
+          />
+        </View>
+
+        {/* first row after middle */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[4],
+              backgroundColor: colors[11],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[3],
+              backgroundColor: colors[12],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[2],
+              backgroundColor: colors[13],
+              flex: 1,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[1],
+              backgroundColor: colors[14],
+              flex: 1,
+              height: 120,
+            }}
+          />
+        </View>
+
+        {/* second row after middle */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[5],
+              backgroundColor: colors[15],
+              flex: 1,
+              height: 100,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[6],
+              backgroundColor: colors[16],
+              flex: 2,
+              height: 100,
+            }}
+          />
+        </View>
+
+        {/* third row after middle */}
+        <View style={styles.container}>
+          <Animated.View
+            style={{
+              opacity: fadeAnims[8],
+              backgroundColor: colors[17],
+              flex: 2,
+              height: 120,
+            }}
+          />
+          <Animated.View
+            style={{
+              opacity: fadeAnims[7],
+              backgroundColor: colors[18],
+              flex: 2,
+              height: 120,
+            }}
+          />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -220,13 +318,13 @@ const randomColor = () => {
 };
 
 const styles = StyleSheet.create({
-  styleBg: {
+  parentContainer: {
     flex: 1,
     backgroundColor: 'white',
   },
 
   styleMiddle: {
-    width: 120,
+    width: 140,
     height: 100,
     backgroundColor: randomColor(),
   },
